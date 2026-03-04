@@ -1,0 +1,233 @@
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    initLenis();
+    renderCatalog();
+    renderGallery();
+    initGSAP();
+    initVanillaTilt();
+    initCounters();
+    initLightbox();
+    initForm();
+});
+
+function initLenis() {
+    const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smooth: true,
+    });
+
+    function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+}
+
+function renderCatalog() {
+    const container = document.getElementById('catalog-container');
+    
+    catalogItems.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'catalog-card group rounded-3xl overflow-hidden bg-white shadow-lg border border-transparent hover:border-gold/50 transition-colors duration-500 gsap-fade-up cursor-pointer';
+        card.setAttribute('data-tilt', '');
+        card.setAttribute('data-tilt-max', '10');
+        card.setAttribute('data-tilt-speed', '400');
+        card.setAttribute('data-tilt-glare', 'true');
+        card.setAttribute('data-tilt-max-glare', '0.2');
+        
+        card.innerHTML = `
+            <div class="relative h-[400px] overflow-hidden catalog-card-img-wrapper">
+                <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out" />
+            </div>
+            <div class="p-8 catalog-card-content relative bg-white z-20">
+                <h3 class="text-2xl font-light mb-2 text-black group-hover:text-gold transition-colors duration-300">${item.title}</h3>
+                <p class="text-gray-500 mb-6 font-light text-sm">${item.description}</p>
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-medium">${item.price}</span>
+                    <button class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-gold group-hover:text-white transition-all duration-300 gold-glow-hover">
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+    
+    lucide.createIcons();
+}
+
+function renderGallery() {
+    const container = document.getElementById('gallery-container');
+    
+    galleryImages.forEach((imgSrc, index) => {
+        const item = document.createElement('div');
+        item.className = 'gallery-item relative rounded-2xl overflow-hidden cursor-pointer gsap-fade-up group mb-6';
+        
+        item.innerHTML = `
+            <img src="${imgSrc}" alt="Showroom ${index + 1}" class="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out" />
+            <div class="absolute inset-0 gallery-img-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                <div class="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <i data-lucide="maximize-2" class="text-white w-6 h-6"></i>
+                </div>
+            </div>
+        `;
+        
+        item.addEventListener('click', () => openLightbox(imgSrc));
+        container.appendChild(item);
+    });
+    
+    lucide.createIcons();
+}
+
+function initGSAP() {
+    gsap.registerPlugin(ScrollTrigger);
+
+    gsap.from('.gsap-hero-fade', {
+        y: 50,
+        opacity: 0,
+        duration: 1.2,
+        stagger: 0.2,
+        ease: 'power3.out',
+        delay: 0.2
+    });
+
+    gsap.to('.parallax-bg img', {
+        yPercent: 20,
+        ease: 'none',
+        scrollTrigger: {
+            trigger: 'header',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true
+        }
+    });
+
+    const fadeElements = document.querySelectorAll('.gsap-fade-up');
+    fadeElements.forEach(elem => {
+        gsap.from(elem, {
+            scrollTrigger: {
+                trigger: elem,
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+            },
+            y: 60,
+            opacity: 0,
+            duration: 0.8,
+            ease: 'power2.out'
+        });
+    });
+
+    const nav = document.querySelector('.gsap-nav');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+            nav.classList.add('shadow-md', 'py-2');
+            nav.classList.remove('py-4');
+        } else {
+            nav.classList.remove('shadow-md', 'py-2');
+            nav.classList.add('py-4');
+        }
+    });
+}
+
+function initVanillaTilt() {
+    VanillaTilt.init(document.querySelectorAll(".catalog-card"), {
+        max: 8,
+        speed: 400,
+        glare: true,
+        "max-glare": 0.15,
+        scale: 1.02
+    });
+}
+
+function initCounters() {
+    const counters = document.querySelectorAll('.counter-target');
+    
+    counters.forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target'));
+        
+        ScrollTrigger.create({
+            trigger: counter,
+            start: 'top 85%',
+            onEnter: () => {
+                let current = 0;
+                const increment = target / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        counter.innerText = target;
+                        clearInterval(timer);
+                    } else {
+                        counter.innerText = Math.ceil(current);
+                    }
+                }, 30);
+            },
+            once: true
+        });
+    });
+}
+
+function openLightbox(imgSrc) {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    
+    lightboxImg.src = imgSrc;
+    lightbox.classList.remove('hidden');
+    
+    requestAnimationFrame(() => {
+        lightbox.classList.remove('opacity-0');
+        lightboxImg.classList.remove('scale-95');
+        lightboxImg.classList.add('scale-100');
+    });
+    
+    document.body.style.overflow = 'hidden';
+}
+
+function initLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    const closeBtn = document.getElementById('lightbox-close');
+    
+    const close = () => {
+        lightbox.classList.add('opacity-0');
+        document.getElementById('lightbox-img').classList.remove('scale-100');
+        document.getElementById('lightbox-img').classList.add('scale-95');
+        
+        setTimeout(() => {
+            lightbox.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 500);
+    };
+    
+    closeBtn.addEventListener('click', close);
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) close();
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) {
+            close();
+        }
+    });
+}
+
+function initForm() {
+    const form = document.getElementById('contact-form');
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const btn = form.querySelector('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span>Відправлено!</span><i data-lucide="check" class="w-5 h-5"></i>';
+        lucide.createIcons();
+        btn.classList.add('bg-gold', 'text-white');
+        
+        setTimeout(() => {
+            form.reset();
+            btn.innerHTML = originalText;
+            lucide.createIcons();
+            btn.classList.remove('bg-gold', 'text-white');
+        }, 3000);
+    });
+}
